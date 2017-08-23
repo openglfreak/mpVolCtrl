@@ -1,0 +1,48 @@
+cmake_minimum_required(VERSION 3.9)
+project("Media Player Volume Control")
+
+
+set(SOURCES "${PROJECT_SOURCE_DIR}/src/main.cpp")
+list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/resource.rc")
+list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/errors.cpp")
+list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/volume_control.cpp")
+
+set(HEADERS "")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/resource.h")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/unicode.h")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/auto_cleanup.hpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/errors.hpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/volume_control.hpp")
+
+
+if(MINGW)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -municode -fno-rtti -pipe -s")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -municode -pipe -s")
+set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -fdata-sections -ffunction-sections -flto -fomit-frame-pointer -fexpensive-optimizations -finline-functions -fno-exceptions")
+set(CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "${CMAKE_EXE_LINKER_FLAGS_MINSIZEREL} -Wl,-gc-sections -Wl,-s -shared-libstdc++ -shared-libgcc -flto")
+set(release_cxx_switches "-O3 -fdata-sections -ffunction-sections -flto -fomit-frame-pointer -fexpensive-optimizations -finline-functions -fno-exceptions")
+set(release_link_switches "-Wl,-gc-sections -Wl,-s -shared-libstdc++ -shared-libgcc -flto")
+elseif(MSVC)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /Oi /Oy /GL /EHsc /GS-")
+set(CMAKE_EXE_LINKER_FLAGS_MINSIZEREL "${CMAKE_EXE_LINKER_FLAGS_MINSIZEREL} /LTCG /INCREMENTAL:NO")
+set(release_cxx_switches "/Ox /Oi /Ot /Oy /GL /EHsc /GS-")
+set(release_link_switches "/LTCG /INCREMENTAL:NO")
+endif()
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${release_cxx_switches}")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${release_link_switches}")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${release_cxx_switches}")
+set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} ${release_link_switches}")
+
+
+link_libraries(ole32)
+link_libraries(Psapi)
+add_executable(mpVolCtrl WIN32 ${SOURCES} ${HEADERS})
+set_target_properties(mpVolCtrl PROPERTIES COMPILE_DEFINITIONS "UNICODE;_UNICODE")
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT result)
+if(result)
+	set_target_properties(mpVolCtrl PROPERTIES INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
+
+set_directory_properties(PROPERTIES VS_STARTUP_PROJECT mpVolCtrl)

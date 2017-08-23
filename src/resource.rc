@@ -1,0 +1,55 @@
+#include <winuser.rh>
+#include <winver.h>
+#include "resource.h"
+
+#if NDEBUG
+#define VERSION_STRING "1.1"
+#else
+#define VERSION_STRING "1.1 (Debug build)"
+#endif
+
+1 VERSIONINFO
+FILEVERSION 1,1,0,0
+PRODUCTVERSION 1,1,0,0
+#if DEBUG
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS VS_FF_DEBUG | VS_FF_PRIVATEBUILD
+#endif
+FILEOS VOS_NT
+FILETYPE VFT_APP
+FILESUBTYPE 0
+BEGIN
+	BLOCK "StringFileInfo"
+	BEGIN
+		BLOCK "040904E4"
+		BEGIN
+			VALUE "CompanyName", "No company"
+			VALUE "FileDescription", "Enables user to use Vol+ and Vol- to control Windows Media Player volume."
+			VALUE "FileVersion", VERSION_STRING
+			VALUE "InternalName", "mpVolCtrl"
+			VALUE "OriginalFilename", "mpVolCtrl.exe"
+#if !NDEBUG
+			VALUE "PrivateBuild", "This is a DEBUG build"
+#endif
+			VALUE "ProductName", PRODUCT_NAME
+			VALUE "ProductVersion", VERSION_STRING
+		END
+	END
+
+	BLOCK "VarFileInfo"
+	BEGIN
+		VALUE "Translation", 0x409, 1252
+	END
+END
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "mpVolCtrl.exe.manifest"
+IDI_ICON ICON "icon.ico"
+
+
+IDR_TRAY_POPUPMENU MENU
+BEGIN
+    POPUP "TrayContextMenu"
+    BEGIN
+        MENUITEM EVAL_STRINGIFY(Disable PRODUCT_NAME_RAW), IDM_TRAY_POPUPMENU_TOGGLE
+        MENUITEM "Exit", IDM_TRAY_POPUPMENU_EXIT
+    END
+END
