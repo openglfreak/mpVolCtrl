@@ -121,7 +121,7 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		ShowErrorMessage(hResult, _T("CoInitializeEx error"));
 		return 1;
 	}
-	AutoCleanup<void (*)()> comCleanup(CoUninitialize);
+	AutoCleanup<void (WINAPI *)()> comCleanup(CoUninitialize);
 
 	hMainWindow = CreateWindow(WC_STATIC, NULL, 0x00, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInstance, NULL);
 	if (hMainWindow == NULL)
@@ -129,9 +129,9 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		ShowErrorMessage(GetLastError(), _T("CreateWindow error"));
 		return 2;
 	}
-	AutoDeleter<HWND, BOOL(*)(HWND)> hMainWindowDeleter(hMainWindow, DestroyWindow);
+	AutoDeleter<HWND, BOOL (WINAPI *)(HWND)> hMainWindowDeleter(hMainWindow, DestroyWindow);
 	subclassMainWindow();
-	AutoCleanup<void(*)()> subclassCleanup(unsubclassMainWindow);
+	AutoCleanup<void (*)()> subclassCleanup(unsubclassMainWindow);
 
 	hMenu = LoadMenu(hInstance, MAKEINTRESOURCE(IDR_TRAY_POPUPMENU));
 	if (hMenu == NULL)
@@ -139,7 +139,7 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		ShowErrorMessage(GetLastError(), _T("LoadMenu error"));
 		return 3;
 	}
-	AutoDeleter<HMENU, BOOL(*)(HMENU)> hMenuDeleter(hMenu, DestroyMenu);
+	AutoDeleter<HMENU, BOOL (WINAPI *)(HMENU)> hMenuDeleter(hMenu, DestroyMenu);
 
 	volKeyStates[0] = GetAsyncKeyState(VK_VOLUME_UP) < 0;
 	volKeyStates[1] = GetAsyncKeyState(VK_VOLUME_DOWN) < 0;
@@ -150,7 +150,7 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		ShowErrorMessage(GetLastError(), _T("SetWindowsHookEx error"));
 		return 4;
 	}
-	AutoDeleter<HHOOK, BOOL(*)(HHOOK)> hKeyboardHookDeleter(hKeyboardHook, UnhookWindowsHookEx);
+	AutoDeleter<HHOOK, BOOL (WINAPI *)(HHOOK)> hKeyboardHookDeleter(hKeyboardHook, UnhookWindowsHookEx);
 
 	NOTIFYICONDATA notifyIconData = { 0 };
 	notifyIconData.cbSize = sizeof(NOTIFYICONDATA);
@@ -160,7 +160,7 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	notifyIconData.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 	notifyIconData.uVersion = NOTIFYICON_VERSION;
 	Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-	AutoDeleter<NOTIFYICONDATA&, void(*)(NOTIFYICONDATA&)> notifyIconDeleter(notifyIconData, deleteNotifyIcon);
+	AutoDeleter<NOTIFYICONDATA&, void (*)(NOTIFYICONDATA&)> notifyIconDeleter(notifyIconData, deleteNotifyIcon);
 
 	MSG msg;
 	BOOL bRet;
