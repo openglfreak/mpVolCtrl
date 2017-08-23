@@ -2,15 +2,9 @@
 #include <winver.h>
 #include "resource.h"
 
-#if NDEBUG
-#define VERSION_STRING "1.1"
-#else
-#define VERSION_STRING "1.1 (Debug build)"
-#endif
-
 1 VERSIONINFO
-FILEVERSION 1,1,0,0
-PRODUCTVERSION 1,1,0,0
+FILEVERSION VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,0
+FILEVERSION VERSION_MAJOR,VERSION_MINOR,VERSION_PATCH,0
 #if DEBUG
 FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
 FILEFLAGS VS_FF_DEBUG | VS_FF_PRIVATEBUILD
@@ -27,7 +21,11 @@ BEGIN
 			VALUE "FileDescription", "Enables user to use Vol+ and Vol- to control Windows Media Player volume."
 			VALUE "FileVersion", VERSION_STRING
 			VALUE "InternalName", "mpVolCtrl"
+#if _WIN64
+			VALUE "OriginalFilename", "mpVolCtrl64.exe"
+#else
 			VALUE "OriginalFilename", "mpVolCtrl.exe"
+#endif
 #if !NDEBUG
 			VALUE "PrivateBuild", "This is a DEBUG build"
 #endif
