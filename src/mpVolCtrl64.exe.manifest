@@ -2,9 +2,9 @@
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
     <assemblyIdentity
         type="win32"
-        name="wmpVolCtrl"
+        name="wmpVolCtrl64"
         language="en-us"
-        processorArchitecture="x86"
+        processorArchitecture="ia64"
         version="1.1.0003.0"
     />
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
