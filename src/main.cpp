@@ -33,13 +33,14 @@ LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 			}
 			else if (((KBDLLHOOKSTRUCT*)lParam)->vkCode == VK_VOLUME_UP)
 			{
-				volKeyStates[0] = false;
+				volKeyStates[0] = true;
 				PostMessage(hMainWindow, APPWM_VOLUMEUP, 0, 0);
 			}
 			else
 				break;
 			return 1;
 		case WM_KEYUP:
+		case WM_SYSKEYUP:
 			if (volKeyStates[1] && ((KBDLLHOOKSTRUCT*)lParam)->vkCode == VK_VOLUME_DOWN)
 				volKeyStates[1] = false;
 			else if (volKeyStates[0] && ((KBDLLHOOKSTRUCT*)lParam)->vkCode == VK_VOLUME_UP)
