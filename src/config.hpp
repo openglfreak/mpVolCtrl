@@ -37,14 +37,13 @@ private:
 		String,
 		WString
 	};
-	//typedef std::pair<ConfigValueType, void*> ConfigValueBinding;
 	struct ConfigValueBinding {
 		ConfigValueType type;
 		void* pointer;
 		std::basic_string<_CharT> description;
 
 		ConfigValueBinding(ConfigValueType type, void* ptr, std::basic_string<_CharT> const& desc) : type(type), pointer(ptr), description(desc) { }
-		//ConfigValueBinding(ConfigValueType type, void* ptr) : type(type), pointer(ptr) { }
+		ConfigValueBinding(ConfigValueType type, void* ptr) : type(type), pointer(ptr) { }
 	};
 	typedef std::map<ConfigOptionName, ConfigValueBinding> ConfigOptions;
 
@@ -52,52 +51,34 @@ private:
 
 	bool add_option_internal(ConfigOptionName const& name, std::basic_string<_CharT> const& description, ConfigValueType type, void* pointer)
 	{
-		return options.insert(ConfigOptions::value_type(name, ConfigValueBinding(type, pointer, description))).second;
+		return options.insert(typename ConfigOptions::value_type(name, ConfigValueBinding(type, pointer, description))).second;
 	}
 public:
-	template<typename T>
-	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, T& binding);
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, bool& binding) { return add_option_internal(name, description, Bool, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, signed char& binding) { return add_option_internal(name, description, SChar, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, unsigned char& binding) { return add_option_internal(name, description, UChar, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, short& binding) { return add_option_internal(name, description, Short, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, unsigned short& binding) { return add_option_internal(name, description, UShort, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, int& binding) { return add_option_internal(name, description, Int, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, unsigned int& binding) { return add_option_internal(name, description, UInt, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, long& binding) { return add_option_internal(name, description, Long, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, unsigned long& binding) { return add_option_internal(name, description, ULong, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, long long& binding) { return add_option_internal(name, description, LongLong, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, unsigned long long& binding) { return add_option_internal(name, description, ULongLong, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, float& binding) { return add_option_internal(name, description, Float, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, double& binding) { return add_option_internal(name, description, Double, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, long double& binding) { return add_option_internal(name, description, LongDouble, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, std::string& binding) { return add_option_internal(name, description, String, (void*)&binding); }
-	template<>
 	bool add_option(ConfigOptionName const& name, std::basic_string<_CharT> const& description, std::wstring& binding) { return add_option_internal(name, description, WString, (void*)&binding); }
 private:
 	struct parse_tools {
-		template<typename _Elem, class _Traits, class _Alloc, typename _CharT, bool ignore_case>
+		template<typename _Elem, class _Traits, class _Alloc, typename _CharT2, bool ignore_case>
 		struct equal_impl;
-		template<typename _Elem, class _Traits, class _Alloc, typename _CharT>
-		struct equal_impl<_Elem, _Traits, _Alloc, _CharT, false> {
-			static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT* str2)
+		template<typename _Elem, class _Traits, class _Alloc, typename _CharT2>
+		struct equal_impl<_Elem, _Traits, _Alloc, _CharT2, false> {
+			static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT2* str2)
 			{
-				for (std::basic_string<_Elem, _Traits, _Alloc>::const_iterator iter = str1.begin(), end = str1.end(); ; ++iter, ++str2)
+				for (typename std::basic_string<_Elem, _Traits, _Alloc>::const_iterator iter = str1.begin(), end = str1.end(); ; ++iter, ++str2)
 					if (iter == end)
 						return *str2 == 0;
 					else if (*str2 == '\0' || *iter != *str2)
@@ -111,11 +92,11 @@ private:
 #endif
 			}
 		};
-		template<typename _Elem, class _Traits, class _Alloc, typename _CharT>
-		struct equal_impl<_Elem, _Traits, _Alloc, _CharT, true> {
-			static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT* str2)
+		template<typename _Elem, class _Traits, class _Alloc, typename _CharT2>
+		struct equal_impl<_Elem, _Traits, _Alloc, _CharT2, true> {
+			static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT2* str2)
 			{
-				for (std::basic_string<_Elem, _Traits, _Alloc>::const_iterator iter = str1.begin(), end = str1.end(); ; ++iter, ++str2)
+				for (typename std::basic_string<_Elem, _Traits, _Alloc>::const_iterator iter = str1.begin(), end = str1.end(); ; ++iter, ++str2)
 					if (iter == end)
 						return *str2 == 0;
 					else if (*str2 == '\0' || toupper(*iter) != toupper(*str2))
@@ -129,14 +110,14 @@ private:
 #endif
 			}
 		};
-		template<bool ignore_case = false, typename _Elem, class _Traits, class _Alloc, typename _CharT>
-		static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT* str2)
+		template<bool ignore_case = false, typename _Elem, class _Traits, class _Alloc, typename _CharT2>
+		static bool equal(std::basic_string<_Elem, _Traits, _Alloc> const& str1, _CharT2* str2)
 		{
-			return equal_impl<_Elem, _Traits, _Alloc, _CharT, ignore_case>::equal(str1, str2);
+			return equal_impl<_Elem, _Traits, _Alloc, _CharT2, ignore_case>::equal(str1, str2);
 		}
 
-		template<typename _CharT>
-		static unsigned char parse_hex_digit(_CharT c)
+		template<typename _CharT2>
+		static unsigned char parse_hex_digit(_CharT2 c)
 		{
 			if (isdigit(c))
 				return c - '0';
@@ -146,15 +127,15 @@ private:
 				return c + 10 - 'a';
 			return 16;
 		}
-		template<typename _CharT>
-		static unsigned char parse_oct_digit(_CharT c)
+		template<typename _CharT2>
+		static unsigned char parse_oct_digit(_CharT2 c)
 		{
 			if (c >= '0' && c <= '7')
 				return c - '0';
 			return 8;
 		}
-		template<typename _CharT>
-		static unsigned char parse_bin_digit(_CharT c)
+		template<typename _CharT2>
+		static unsigned char parse_bin_digit(_CharT2 c)
 		{
 			if (c >= '0' && c <= '1')
 				return c - '0';
@@ -288,10 +269,10 @@ public:
 	{
 		typedef std::basic_istream<_CharT, _Traits> istream_type;
 
-		istream_type::int_type eof = istream_type::traits_type::eof();
-		istream_type::char_type space = in.widen(' ');
+		typename istream_type::int_type eof = istream_type::traits_type::eof();
+		typename istream_type::char_type space = in.widen(' ');
 
-		istream_type::int_type c;
+		typename istream_type::int_type c;
 		while (!in.eof())
 		{
 			while ((c = in.get()) != eof && c == space);
@@ -307,13 +288,13 @@ public:
 				continue;
 
 			std::basic_string<_CharT> optionName;
-			istream_type::char_type delim = in.widen(':');
+			typename istream_type::char_type delim = in.widen(':');
 			for (; c != eof && c != delim; c = in.get())
 				optionName.push_back(c);
 			if (in.eof())
 				return;
 
-			std::basic_string<_CharT>::size_type i = optionName.find_last_not_of(space);
+			typename std::basic_string<_CharT>::size_type i = optionName.find_last_not_of(space);
 			if (i != std::basic_string<_CharT>::npos && i + 2 < optionName.size())
 				optionName.erase(i + 1);
 
@@ -333,49 +314,49 @@ public:
 			if (i != std::basic_string<_CharT>::npos && i + 1 < optionValue.size())
 				optionValue.erase(i + 1);
 
-			ConfigOptions::iterator iter = options.find(optionName);
+			typename ConfigOptions::iterator iter = options.find(optionName);
 			if (iter == options.end())
 				continue;
 			bool parse_error, overflow;
 			switch ((*iter).second.type)
 			{
 			case Bool:
-				if (parse_tools::equal<true>(optionValue, "true"))
+				if (parse_tools::template equal<true>(optionValue, "true"))
 					*((bool*)(*iter).second.pointer) = true;
-				else if (parse_tools::equal<true>(optionValue, "false"))
+				else if (parse_tools::template equal<true>(optionValue, "false"))
 					*((bool*)(*iter).second.pointer) = false;
 				else
-					*((bool*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned char>(optionValue.begin(), optionValue.end(), parse_error, overflow) != 0 || overflow;
+					*((bool*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned char>(optionValue.begin(), optionValue.end(), parse_error, overflow) != 0 || overflow;
 				break;
 			case SChar:
-				*((signed char*)(*iter).second.pointer) = parse_tools::parse_int<char>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((signed char*)(*iter).second.pointer) = parse_tools::template parse_int<char>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case UChar:
-				*((char*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned char>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((char*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned char>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case Short:
-				*((short*)(*iter).second.pointer) = parse_tools::parse_int<short>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((short*)(*iter).second.pointer) = parse_tools::template parse_int<short>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case UShort:
-				*((unsigned short*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned short>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((unsigned short*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned short>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case Int:
-				*((int*)(*iter).second.pointer) = parse_tools::parse_int<int>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((int*)(*iter).second.pointer) = parse_tools::template parse_int<int>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case UInt:
-				*((unsigned int*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned int>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((unsigned int*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned int>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case Long:
-				*((long*)(*iter).second.pointer) = parse_tools::parse_int<long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((long*)(*iter).second.pointer) = parse_tools::template parse_int<long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case ULong:
-				*((unsigned long*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((unsigned long*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case LongLong:
-				*((long long*)(*iter).second.pointer) = parse_tools::parse_int<long long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((long long*)(*iter).second.pointer) = parse_tools::template parse_int<long long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			case ULongLong:
-				*((unsigned long long*)(*iter).second.pointer) = parse_tools::parse_uint<unsigned long long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
+				*((unsigned long long*)(*iter).second.pointer) = parse_tools::template parse_uint<unsigned long long>(optionValue.begin(), optionValue.end(), parse_error, overflow);
 				break;
 			// TODO: implement
 			case String:
@@ -416,7 +397,7 @@ public:
 	template<class _Traits>
 	void write_config(std::basic_ostream<_CharT, _Traits>& out)
 	{
-		for (ConfigOptions::iterator iter = options.begin(), end = options.end(); iter != end; ++iter)
+		for (typename ConfigOptions::iterator iter = options.begin(), end = options.end(); iter != end; ++iter)
 		{
 			if (!(*iter).second.description.empty())
 			{
