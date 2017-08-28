@@ -13,6 +13,7 @@ list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/unicode.h")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/auto_cleanup.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/errors.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/volume_control.hpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/config.hpp")
 
 
 if(MINGW)
@@ -38,12 +39,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${release_cxx_switches}"
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${release_link_switches}")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${release_cxx_switches}")
 set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO} ${release_link_switches}")
+set(CMAKE_CXX_STANDARD 17)
 
 
 link_libraries(ole32)
 link_libraries(Psapi)
 add_executable(mpVolCtrl WIN32 ${SOURCES} ${HEADERS})
-set_target_properties(mpVolCtrl PROPERTIES COMPILE_DEFINITIONS "UNICODE;_UNICODE")
+set_target_properties(mpVolCtrl PROPERTIES COMPILE_DEFINITIONS "UNICODE;_UNICODE;NTDDI_VERSION=0x05010000;_WIN32_WINNT=0x0501;WINVER=0x0501")
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 set_target_properties(mpVolCtrl PROPERTIES OUTPUT_NAME "mpVolCtrl64")
 endif()

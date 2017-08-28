@@ -9,6 +9,7 @@ private:
 	Function f;
 	bool disabled;
 public:
+	AutoCleanup(Function f, bool disabled) : f(f), disabled(disabled) { }
 	AutoCleanup(Function f) : f(f), disabled() { }
 	AutoCleanup() : f(), disabled() { }
 
@@ -41,8 +42,11 @@ private:
 	Deleter deleter;
 	bool disabled;
 public:
+	AutoDeleter(T const& o, Deleter deleter, bool disabled) : value(static_cast<T>(o)), deleter(deleter), disabled() { }
 	AutoDeleter(T const& o, Deleter deleter) : value(static_cast<T>(o)), deleter(deleter), disabled() { }
-	AutoDeleter(Deleter deleter) : value(), deleter(deleter), disabled(true) { }
+	AutoDeleter(Deleter deleter, bool disabled) : value(), deleter(deleter), disabled(disabled) { }
+	AutoDeleter(Deleter deleter) : value(), deleter(deleter), disabled() { }
+	AutoDeleter(T const& o, bool disabled) : value(static_cast<T>(o)), deleter(), disabled(disabled) { }
 	AutoDeleter(T const& o) : value(static_cast<T>(o)), deleter(), disabled() { }
 	AutoDeleter() : value(), deleter(), disabled(true) { }
 
@@ -83,6 +87,7 @@ private:
 	Interface* value;
 	bool disabled;
 public:
+	AutoReleaser(Interface* o, bool disabled) : value(o), disabled(disabled) { static_cast<IUnknown*>(o); }
 	AutoReleaser(Interface* o) : value(o), disabled() { static_cast<IUnknown*>(o); }
 	AutoReleaser() : value(), disabled(true) { static_cast<IUnknown*>(reinterpret_cast<Interface*>(NULL)); }
 
