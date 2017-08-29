@@ -87,9 +87,9 @@ private:
 	Interface* value;
 	bool disabled;
 public:
-	AutoReleaser(Interface* o, bool disabled) : value(o), disabled(disabled) { static_cast<IUnknown*>(o); }
-	AutoReleaser(Interface* o) : value(o), disabled() { static_cast<IUnknown*>(o); }
-	AutoReleaser() : value(), disabled(true) { static_cast<IUnknown*>(reinterpret_cast<Interface*>(NULL)); }
+	AutoReleaser(Interface* o, bool disabled) : value(reinterpret_cast<Interface*>(static_cast<IUnknown*>(o))), disabled(disabled) { }
+	AutoReleaser(Interface* o) : value(reinterpret_cast<Interface*>(static_cast<IUnknown*>(o))), disabled() { }
+	AutoReleaser() : value(reinterpret_cast<Interface*>(static_cast<IUnknown*>(reinterpret_cast<Interface*>(NULL)))), disabled(true) { }
 
 	~AutoReleaser() { if (!disabled) value->Release(); }
 

@@ -150,6 +150,9 @@ private:
 			if (start == end)
 				return false;
 			_Type ret;
+#if __clang__
+			ret = _Type();
+#endif
 			if (!isdigit(*start))
 			{
 				ret = 0;

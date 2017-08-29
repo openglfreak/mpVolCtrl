@@ -2,8 +2,10 @@
 
 #include <algorithm>
 
+#include <assert.h>
 #include <Windows.h>
 #include <tchar.h>
+#include <initguid.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 #include <Psapi.h>
@@ -12,18 +14,14 @@
 #include "errors.hpp"
 #include "volume_control.hpp"
 
-#undef min
-#undef max
-
+#if _MSC_VER
 const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 const IID IID_IAudioSessionManager2 = __uuidof(IAudioSessionManager2);
 const IID IID_ISimpleAudioVolume = __uuidof(ISimpleAudioVolume);
 const IID IID_IAudioSessionControl2 = __uuidof(IAudioSessionControl2);
+#endif
 
-std::vector<MediaPlayerVolumeControlProvider*> volumeControlProviders;
-
-#include <sstream>
 class AudioSesionInterfaceVolumeControlProvider : public MediaPlayerVolumeControlProvider
 {
 protected:
@@ -154,7 +152,7 @@ private:
 			AutoReleaser<ISimpleAudioVolume> iAudioVolumeReleaser(iAudioVolume);
 			float volume;
 			iAudioVolume->GetMasterVolume(&volume);
-			iAudioVolume->SetMasterVolume(std::min(std::max(volume += delta, 0.f), 1.f), NULL);
+			iAudioVolume->SetMasterVolume(std::min<float>(std::max<float>(volume += delta, 0.f), 1.f), NULL);
 		}
 	};
 
@@ -171,12 +169,57 @@ private:
 class VLCMediaPlayerVolumeControlProvider;
 */
 
+std::vector<MediaPlayerVolumeControlProvider*>* volumeControlProvidersPtr = NULL;
+
+bool add_volume_control(MediaPlayerVolumeControlProvider* vcp)
+{
+	if (!volumeControlProvidersPtr && !(volumeControlProvidersPtr = new std::vector<MediaPlayerVolumeControlProvider*>()))
+		return false;
+	volumeControlProvidersPtr->push_back(vcp);
+	return true;
+}
+bool remove_volume_control(MediaPlayerVolumeControlProvider* vcp)
+{
+	if (volumeControlProvidersPtr)
+	{
+		std::vector<MediaPlayerVolumeControlProvider*>::iterator end = volumeControlProvidersPtr->end(), new_end = std::remove(volumeControlProvidersPtr->begin(), end, vcp);
+		if (new_end != end)
+		{
+			volumeControlProvidersPtr->erase(new_end);
+			return true;
+		}
+	}
+	return false;
+}
+void delete_volume_controls()
+{
+	for (std::vector<MediaPlayerVolumeControlProvider*>::iterator start = volumeControlProvidersPtr->begin(), end = volumeControlProvidersPtr->end(); start != end; ++start)
+		delete *start;
+	volumeControlProvidersPtr->clear();
+}
+
+MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS volume_change(float amount)
+{
+	MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS ret = MediaPlayerVolumeControlProvider::STATUS_NOT_FOUND;
+	for (std::vector<MediaPlayerVolumeControlProvider*>::iterator start = volumeControlProvidersPtr->begin(), end = volumeControlProvidersPtr->end(); start != end; ++start)
+	{
+		MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS tmp = (*start)->volume_change(amount);
+		if (tmp == MediaPlayerVolumeControlProvider::STATUS_FOUND)
+			ret = MediaPlayerVolumeControlProvider::STATUS_FOUND;
+	}
+	return ret;
+}
+
 struct __dummy {
 	__dummy()
 	{
 		AudioSesionInterfaceVolumeControlProvider* audioSessIfaceVolCtrlProvider(new AudioSesionInterfaceVolumeControlProvider());
-		audioSessIfaceVolCtrlProvider->register_process_name(_T("wmplayer.exe"));
-		volumeControlProviders.push_back(audioSessIfaceVolCtrlProvider);
-		volumeControlProviders.shrink_to_fit();
+		audioSessIfaceVolCtrlProvider->register_process_name(std::basic_string<TCHAR>(_T("wmplayer.exe")));
+		add_volume_control(audioSessIfaceVolCtrlProvider);
+	}
+	~__dummy()
+	{
+		assert(volumeControlProvidersPtr != NULL);
+		delete volumeControlProvidersPtr;
 	}
 } __dummy_inst;

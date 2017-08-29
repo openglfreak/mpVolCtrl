@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <vector>
+#include <memory>
 
 class MediaPlayerVolumeControlProvider
 {
@@ -50,27 +51,18 @@ private:
 	}
 };
 
-extern std::vector<MediaPlayerVolumeControlProvider*> volumeControlProviders;
+bool add_volume_control(MediaPlayerVolumeControlProvider*);
+bool remove_volume_control(MediaPlayerVolumeControlProvider*);
+void delete_volume_controls();
 
-inline MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS volume_change(float amount)
-{
-	typedef std::vector<MediaPlayerVolumeControlProvider*> vect_type;
-
-	MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS ret = MediaPlayerVolumeControlProvider::STATUS_NOT_FOUND;
-	for (vect_type::iterator start = volumeControlProviders.begin(), end = volumeControlProviders.end(); start != end; ++start)
-	{
-		MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS tmp = (*start)->volume_change(amount);
-		if (tmp == MediaPlayerVolumeControlProvider::STATUS_FOUND)
-			ret = MediaPlayerVolumeControlProvider::STATUS_FOUND;
-	}
-	return ret;
-}
+MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS volume_change(float amount);
 
 inline MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS volume_up(float amount)
 {
 #if NDEBUG
 	return volume_change(amount);
 #else
+	assert(amount >= 0);
 	return volume_change(std::abs(amount));
 #endif
 }
@@ -79,6 +71,7 @@ inline MediaPlayerVolumeControlProvider::VOLUME_CHANGE_STATUS volume_down(float 
 #if NDEBUG
 	return volume_change(-amount);
 #else
+	assert(amount >= 0);
 	return volume_change(-std::abs(amount));
 #endif
 }
