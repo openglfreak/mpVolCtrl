@@ -16,10 +16,12 @@ struct MPVCConfig : public config::ConfigIO<_TCHAR>
 	bool disabled;
 	bool invisible;
 
+	bool startHidden;
+
 	MPVCConfig()
 	{
 		config::ConfigIO<_TCHAR>::add_option(_T("Disabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. true for disabled and false for enabled"), disabled);
-		config::ConfigIO<_TCHAR>::add_option(_T("StartHidden"), _T("Whether the Notification Area icon is shown or not. true for hidden and false for not hidden"), invisible);
+		config::ConfigIO<_TCHAR>::add_option(_T("StartHidden"), _T("Whether the Notification Area icon is shown or not. true for hidden and false for not hidden"), startHidden);
 	}
 public:
 	static int get_config_path(std::string& configPath)
@@ -107,6 +109,8 @@ public:
 			config::ConfigIO<_TCHAR>::parse_config(std::istreambuf_iterator<_TCHAR>(fs >> std::noskipws), std::istreambuf_iterator<_TCHAR>());
 		if (fs.is_open())
 			fs.close();
+
+		invisible = startHidden;
 		return true;
 	}
 };
