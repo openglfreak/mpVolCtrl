@@ -14,6 +14,7 @@ list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/auto_cleanup.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/errors.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/volume_control.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/config.hpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/mpvc_config.hpp")
 
 
 if(MINGW)

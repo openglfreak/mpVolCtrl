@@ -2,17 +2,19 @@
 
 #include <Windows.h>
 #include <tchar.h>
+#include <wchar.h>
 #include <CommCtrl.h>
 #include <Shlobj.h>
 
 #include <fstream>
 #include <memory>
+#include <string>
 
 #include "resource.h"
 #include "auto_cleanup.hpp"
 #include "errors.hpp"
 #include "volume_control.hpp"
-#include "config.hpp"
+#include "mpvc_config.hpp"
 
 #define APPWM_VOLUMEUP (WM_APP+1)
 #define APPWM_VOLUMEDOWN (WM_APP+2)
@@ -28,13 +30,12 @@ static HHOOK hKeyboardHook;
 
 NOTIFYICONDATA notifyIconData = { 0 };
 
-static bool hookDisabled = false;
-static bool notifyIconInvisible = false;
+MPVCConfig mpvc_config;
 
 static bool volKeyStates[2];
 LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 {
-	if (code == HC_ACTION && !hookDisabled)
+	if (code == HC_ACTION && !mpvc_config.disabled)
 		switch (wParam)
 		{
 		case WM_KEYDOWN:
@@ -82,7 +83,7 @@ AutoCleanup<void(*)()>* notifyIconDeleter;
 
 void addNotifyIcon()
 {
-	notifyIconInvisible = false;
+	mpvc_config.invisible = false;
 	*notifyIconDeleter = false;
 	Shell_NotifyIcon(NIM_ADD, &notifyIconData);
 }
@@ -91,7 +92,7 @@ void deleteNotifyIcon()
 {
 	Shell_NotifyIcon(NIM_DELETE, &notifyIconData);
 	*notifyIconDeleter = true;
-	notifyIconInvisible = true;
+	mpvc_config.invisible = true;
 }
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -114,15 +115,15 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (lParam & 3)
 		{
 		case 1:
-			if (notifyIconInvisible)
+			if (mpvc_config.invisible)
 				addNotifyIcon();
 			break;
 		case 2:
-			if (!notifyIconInvisible)
+			if (!mpvc_config.invisible)
 				deleteNotifyIcon();
 			break;
 		default:
-			if (notifyIconInvisible)
+			if (mpvc_config.invisible)
 				addNotifyIcon();
 			else
 				deleteNotifyIcon();
@@ -135,7 +136,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			POINT cursorPos;
 			GetCursorPos(&cursorPos);
 			SetForegroundWindow(hWnd);
-			ModifyMenu(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | MF_STRING, IDM_TRAY_POPUPMENU_TOGGLE, hookDisabled ? _T("Enable ") _T(PRODUCT_NAME) : _T("Disable ") _T(PRODUCT_NAME));
+			ModifyMenu(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | MF_STRING, IDM_TRAY_POPUPMENU_TOGGLE, mpvc_config.disabled ? _T("Enable ") _T(PRODUCT_NAME) : _T("Disable ") _T(PRODUCT_NAME));
 			TrackPopupMenu(GetSubMenu(hMenu, 0), TPM_RIGHTBUTTON | TPM_HORPOSANIMATION | TPM_VERPOSANIMATION, cursorPos.x, cursorPos.y, 0, hWnd, NULL);
 			return 0;
 		}
@@ -144,7 +145,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case IDM_TRAY_POPUPMENU_TOGGLE:
-			hookDisabled = !hookDisabled;
+			mpvc_config.disabled = !mpvc_config.disabled;
 			return 0;
 		case IDM_TRAY_POPUPMENU_HIDE:
 			deleteNotifyIcon();
@@ -170,79 +171,6 @@ void unsubclassMainWindow()
 	SetWindowLongPtr(hMainWindow, GWLP_WNDPROC, prevWndProc);
 }
 
-struct MPVCConfig
-{
-	static ConfigIO<_TCHAR> configIO;
-
-	static void registerOptions()
-	{
-		configIO.add_option(_T("Disabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. true for disabled and false for enabled"), hookDisabled);
-		configIO.add_option(_T("StartInvisible"), _T("Whether the Notification Area icon is shown or not. true for visible and false for hidden"), notifyIconInvisible);
-	}
-
-	static bool readConfig()
-	{
-		std::basic_string<_TCHAR> configPath(MAX_PATH, _T('\0'));
-		while (!SUCCEEDED(SHGetSpecialFolderPath(NULL, &configPath[0], CSIDL_APPDATA, TRUE)) && !SUCCEEDED(SHGetSpecialFolderPath(NULL, &configPath[0], CSIDL_LOCAL_APPDATA, TRUE)) && !SUCCEEDED(SHGetSpecialFolderPath(NULL, &configPath[0], CSIDL_MYDOCUMENTS, TRUE)))
-		{
-			int o = MessageBox(NULL, _T("Couldn't determine config folder"), _T("SHGetSpecialFolderPath error"), MB_ABORTRETRYIGNORE | MB_DEFBUTTON2);
-			if (o == IDABORT)
-				return false;
-			else if (o == IDRETRY)
-				continue;
-			else if (o == IDIGNORE)
-				return true;
-		}
-		std::basic_fstream<_TCHAR> fs;
-#ifdef _MSC_VER
-		configPath.resize(_tcslen(configPath.data()));
-		configPath.append(_T("\\mpVolCtrl"));
-		CreateDirectory(configPath.c_str(), NULL);
-		configPath.append(_T("\\config.txt"));
-		fs.open(configPath, std::basic_fstream<_TCHAR>::in);
-#else
-		DWORD len;
-		if ((len = GetShortPathName(&configPath[0], &configPath[0], MAX_PATH)) == 0)
-			return true;
-		else if (len > MAX_PATH)
-		{
-			configPath.resize(len);
-			DWORD len2;
-			if ((len2 = GetShortPathName(&configPath[0], &configPath[0], len)) == 0 || len2 > len)
-				return true;
-		}
-		configPath.resize(len);
-		configPath.append(_T("\\mpVolCtrl"));
-		CreateDirectory(configPath.c_str(), NULL);
-		configPath.append(_T("\\config.txt"));
-
-		std::string configPathNarrow;
-		configPathNarrow.reserve(configPath.length());
-		std::copy(configPath.begin(), configPath.end(), std::back_inserter(configPathNarrow));
-		fs.open(configPathNarrow, std::basic_fstream<_TCHAR>::in);
-#endif
-		if (fs.fail())
-		{
-#ifdef _MSC_VER
-			fs.open(configPath, std::basic_fstream<_TCHAR>::out);
-#else
-			fs.open(configPathNarrow, std::basic_fstream<_TCHAR>::out);
-#endif
-			if (!fs.fail())
-			{
-				fs << std::noskipws << "# Media Player Volume Control config" << std::endl << "# Generated by Media Player Volume Control " VERSION_STRING << std::endl << std::endl;
-				configIO.write_config(fs);
-			}
-		}
-		else
-			configIO.read_config(fs >> std::noskipws);
-		if (fs.is_open())
-			fs.close();
-		return true;
-	}
-};
-ConfigIO<_TCHAR> MPVCConfig::configIO;
-
 int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCmdLine, int nCmdShow)
 {
 	::hInstance = hInstance;
@@ -256,8 +184,7 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		return 0;
 	}
 
-	MPVCConfig::registerOptions();
-	if (!MPVCConfig::readConfig())
+	if (!mpvc_config.read_config())
 	{
 		MessageBox(NULL, _T("Couldn't read config.txt"), _T("Config error"), MB_OK);
 		return 5;
@@ -306,9 +233,9 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	notifyIconData.uCallbackMessage = APPWM_TRAYICON;
 	notifyIconData.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON));
 	notifyIconData.uVersion = NOTIFYICON_VERSION;
-	if (!notifyIconInvisible)
+	if (!mpvc_config.invisible)
 		Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-	AutoCleanup<void(*)()> notifyIconDeleter(deleteNotifyIcon, notifyIconInvisible);
+	AutoCleanup<void(*)()> notifyIconDeleter(deleteNotifyIcon, mpvc_config.invisible);
 	::notifyIconDeleter = &notifyIconDeleter;
 
 	MSG msg;
