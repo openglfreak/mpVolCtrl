@@ -1,11 +1,11 @@
 #include "unicode.h"
+#include <assert.h>
 
 #include <algorithm>
 
-#include <assert.h>
+#include <initguid.h>
 #include <Windows.h>
 #include <tchar.h>
-#include <initguid.h>
 #include <mmdeviceapi.h>
 #include <audiopolicy.h>
 #include <Psapi.h>

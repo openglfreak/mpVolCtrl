@@ -3,6 +3,7 @@
 #define __VOLUME_CONTROL_HPP__
 
 #include "unicode.h"
+#include <assert.h>
 
 #include <cmath>
 #include <vector>
