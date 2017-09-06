@@ -193,6 +193,9 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 		MessageBox(NULL, _T("Couldn't read config.txt"), _T("Config error"), MB_OK);
 		return 5;
 	}
+	struct __config_write {
+		~__config_write() { mpvc_config.write_config(); }
+	} __config_write_inst;
 
 	HRESULT hResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	if (!SUCCEEDED(hResult))
