@@ -25,13 +25,13 @@ public:
 	bool disabled;
 	bool invisible;
 
-	bool startDisabled;
-	bool startHidden;
+	unsigned char startDisabled;
+	unsigned char startHidden;
 
-	MPVCConfig()
+	MPVCConfig() : configPath(), disabled(), invisible(), startDisabled(2), startHidden(2)
 	{
-		config::ConfigIO<_TCHAR>::add_option(_T("StartDisabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. true for disabled and false for enabled"), startDisabled);
-		config::ConfigIO<_TCHAR>::add_option(_T("StartHidden"), _T("Whether the Notification Area icon is shown or not. true for hidden and false for not hidden"), startHidden);
+		config::ConfigIO<_TCHAR>::add_option(_T("StartDisabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. 0 for enabled, 1 for disabled and 2 and 3 for enabled and disabled but remember the last state"), startDisabled);
+		config::ConfigIO<_TCHAR>::add_option(_T("StartHidden"), _T("Whether the Notification Area icon is shown or not. 0 for visible, 1 for hidden and 2 and 3 for visible and hidden but remember last state"), startHidden);
 	}
 
 	int get_config_path()
@@ -91,13 +91,18 @@ public:
 		if (fs.is_open())
 			fs.close();
 
-		invisible = startHidden;
-		disabled = startDisabled;
+		disabled = (startDisabled & 1) != 0;
+		invisible = (startHidden & 1) != 0;
 		return true;
 	}
 
 	bool write_config()
 	{
+		if (startDisabled & 2)
+			startDisabled = disabled ? 3 : 2;
+		if (startHidden & 2)
+			startHidden = invisible ? 3 : 2;
+
 		std::basic_fstream<_TCHAR> fs;
 		fs.open(configPath, std::basic_fstream<_TCHAR>::out);
 		if (!fs.fail())

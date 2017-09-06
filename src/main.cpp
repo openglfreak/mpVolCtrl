@@ -20,6 +20,7 @@
 #define APPWM_VOLUMEDOWN (WM_APP+2)
 #define APPWM_TRAYICON (WM_APP+3)
 #define APPWM_TOGGLENICON (WM_APP+4)
+#define APPWM_TOGGLEMEDIAKEYS (WM_APP+5)
 
 static const TCHAR mainWindowName[] = _T("mpVolCtrl Message Window");
 
@@ -63,7 +64,10 @@ LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 			else if (((KBDLLHOOKSTRUCT*)lParam)->vkCode == VK_VOLUME_UP)
 			{
 				volKeyStates[0] = true;
-				PostMessage(hMainWindow, APPWM_TOGGLENICON, 0, 0);
+				if (GetAsyncKeyState(VK_CONTROL) < 0)
+					PostMessage(hMainWindow, APPWM_TOGGLEMEDIAKEYS, 0, 0);
+				else
+					PostMessage(hMainWindow, APPWM_TOGGLENICON, 0, 0);
 			}
 			else
 				break;
@@ -131,6 +135,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				deleteNotifyIcon();
 		}
 		break;
+	case APPWM_TOGGLEMEDIAKEYS:
+		mpvc_config.disabled = !mpvc_config.disabled;
+		break;
 	case APPWM_TRAYICON:
 		switch (LOWORD(lParam))
 		{
@@ -139,8 +146,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			GetCursorPos(&cursorPos);
 			SetForegroundWindow(hWnd);
 			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | (!mpvc_config.disabled ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN, MF_BYCOMMAND | (mpvc_config.startHidden ? MF_CHECKED : MF_UNCHECKED));
-			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED, MF_BYCOMMAND | (mpvc_config.startDisabled ? MF_CHECKED : MF_UNCHECKED));
+			CheckMenuRadioItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_VISIBLE, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_REMEMBER, mpvc_config.startHidden & 2 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_REMEMBER : (mpvc_config.startHidden & 1 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_HIDDEN : IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_VISIBLE), MF_BYCOMMAND);
+			CheckMenuRadioItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_ENABLED, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER, mpvc_config.startDisabled & 2 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER : (mpvc_config.startDisabled & 1 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_DISABLED : IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_ENABLED), MF_BYCOMMAND);
 			TrackPopupMenu(GetSubMenu(hMenu, 0), TPM_RIGHTBUTTON | TPM_HORPOSANIMATION | TPM_VERPOSANIMATION, cursorPos.x, cursorPos.y, 0, hWnd, NULL);
 			return 0;
 		}
@@ -154,11 +161,25 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDM_TRAY_POPUPMENU_HIDE:
 			deleteNotifyIcon();
 			return 0;
-		case IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN:
-			mpvc_config.startHidden = !mpvc_config.startHidden;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_VISIBLE:
+			mpvc_config.startHidden = 0;
 			return 0;
-		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED:
-			mpvc_config.startDisabled = !mpvc_config.startDisabled;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_HIDDEN:
+			mpvc_config.startHidden = 1;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_REMEMBER:
+			if ((mpvc_config.startHidden & 2) == 0)
+				mpvc_config.startHidden = 2;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_ENABLED:
+			mpvc_config.startDisabled = 0;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_DISABLED:
+			mpvc_config.startDisabled = 1;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER:
+			if ((mpvc_config.startDisabled & 2) == 0)
+				mpvc_config.startDisabled = 2;
 			return 0;
 		case IDM_TRAY_POPUPMENU_EXIT:
 			PostQuitMessage(0);
@@ -248,7 +269,12 @@ int CALLBACK _tWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPTSTR lpCm
 	notifyIconData.uVersion = NOTIFYICON_VERSION;
 	if (!mpvc_config.invisible)
 		Shell_NotifyIcon(NIM_ADD, &notifyIconData);
-	AutoCleanup<void(*)()> notifyIconDeleter(deleteNotifyIcon, mpvc_config.invisible);
+	struct __delete_notifyicon {
+		// So invisible doesn't get set to false before the config is written
+		//   note: I learned about that the hard way.
+		static void del() { Shell_NotifyIcon(NIM_DELETE, &notifyIconData); }
+	};
+	AutoCleanup<void(*)()> notifyIconDeleter(__delete_notifyicon::del, mpvc_config.invisible);
 	::notifyIconDeleter = &notifyIconDeleter;
 
 	MSG msg;
