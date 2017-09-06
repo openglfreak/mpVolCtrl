@@ -25,11 +25,12 @@ public:
 	bool disabled;
 	bool invisible;
 
+	bool startDisabled;
 	bool startHidden;
 
 	MPVCConfig()
 	{
-		config::ConfigIO<_TCHAR>::add_option(_T("Disabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. true for disabled and false for enabled"), disabled);
+		config::ConfigIO<_TCHAR>::add_option(_T("StartDisabled"), _T("Whether the Media Keys redirection is disabled or enabled on start. true for disabled and false for enabled"), startDisabled);
 		config::ConfigIO<_TCHAR>::add_option(_T("StartHidden"), _T("Whether the Notification Area icon is shown or not. true for hidden and false for not hidden"), startHidden);
 	}
 
@@ -91,6 +92,7 @@ public:
 			fs.close();
 
 		invisible = startHidden;
+		disabled = startDisabled;
 		return true;
 	}
 

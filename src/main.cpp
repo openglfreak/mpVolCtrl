@@ -140,6 +140,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SetForegroundWindow(hWnd);
 			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | (!mpvc_config.disabled ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN, MF_BYCOMMAND | (mpvc_config.startHidden ? MF_CHECKED : MF_UNCHECKED));
+			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED, MF_BYCOMMAND | (mpvc_config.startDisabled ? MF_CHECKED : MF_UNCHECKED));
 			TrackPopupMenu(GetSubMenu(hMenu, 0), TPM_RIGHTBUTTON | TPM_HORPOSANIMATION | TPM_VERPOSANIMATION, cursorPos.x, cursorPos.y, 0, hWnd, NULL);
 			return 0;
 		}
@@ -155,6 +156,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return 0;
 		case IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN:
 			mpvc_config.startHidden = !mpvc_config.startHidden;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED:
+			mpvc_config.startDisabled = !mpvc_config.startDisabled;
 			return 0;
 		case IDM_TRAY_POPUPMENU_EXIT:
 			PostQuitMessage(0);
