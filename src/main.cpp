@@ -35,10 +35,12 @@ MPVCConfig mpvc_config;
 static bool volKeyStates[2];
 LRESULT CALLBACK LowLevelKeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 {
-	if (code == HC_ACTION && !mpvc_config.disabled)
+	if (code == HC_ACTION)
 		switch (wParam)
 		{
 		case WM_KEYDOWN:
+			if (mpvc_config.disabled)
+				break;
 			if (((KBDLLHOOKSTRUCT*)lParam)->vkCode == VK_VOLUME_DOWN)
 			{
 				volKeyStates[1] = true;
@@ -136,7 +138,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			POINT cursorPos;
 			GetCursorPos(&cursorPos);
 			SetForegroundWindow(hWnd);
-			ModifyMenu(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | MF_STRING, IDM_TRAY_POPUPMENU_TOGGLE, mpvc_config.disabled ? _T("Enable ") _T(PRODUCT_NAME) : _T("Disable ") _T(PRODUCT_NAME));
+			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | (!mpvc_config.disabled ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN, MF_BYCOMMAND | (mpvc_config.startHidden ? MF_CHECKED : MF_UNCHECKED));
 			TrackPopupMenu(GetSubMenu(hMenu, 0), TPM_RIGHTBUTTON | TPM_HORPOSANIMATION | TPM_VERPOSANIMATION, cursorPos.x, cursorPos.y, 0, hWnd, NULL);
 			return 0;
