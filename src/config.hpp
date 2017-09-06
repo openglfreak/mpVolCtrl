@@ -472,9 +472,9 @@ namespace config
 					*((bool*)out.pointer) = false;
 				else
 				{
-					overflow |= parse_number<unsigned short>(str, fail, overflow) != 0;
+					underflow = parse_number<unsigned short>(str, fail, overflow) != 0;
 					if (!fail)
-						*((bool*)out.pointer) = overflow;
+						*((bool*)out.pointer) = overflow | underflow;
 				}
 				break;
 			case Char:
