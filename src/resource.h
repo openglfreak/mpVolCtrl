@@ -9,7 +9,7 @@
 
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
-#define VERSION_PATCH 0003
+#define VERSION_PATCH 0004
 #if _WIN64
 #define VERSION_BITS 64
 #else
