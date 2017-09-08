@@ -6,6 +6,7 @@ set(SOURCES "${PROJECT_SOURCE_DIR}/src/main.cpp")
 list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/resource.rc")
 list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/errors.cpp")
 list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/volume_control.cpp")
+list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/src/autorun_task.cpp")
 
 set(HEADERS "")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/resource.h")
@@ -15,6 +16,7 @@ list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/errors.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/volume_control.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/config.hpp")
 list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/mpvc_config.hpp")
+list(APPEND HEADERS "${PROJECT_SOURCE_DIR}/src/autorun_task.hpp")
 
 
 if(MINGW)
@@ -51,11 +53,13 @@ set(CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO "${CMAKE_EXE_LINKER_FLAGS_RELWITHDEBIN
 set(CMAKE_CXX_STANDARD 17)
 
 
+link_libraries(uuid)
 link_libraries(ole32)
 link_libraries(Psapi)
-link_libraries(uuid)
+link_libraries(taskschd)
+link_libraries(Secur32)
 add_executable(mpVolCtrl WIN32 ${SOURCES} ${HEADERS})
-set_target_properties(mpVolCtrl PROPERTIES COMPILE_DEFINITIONS "UNICODE;_UNICODE;NTDDI_VERSION=0x05010000;_WIN32_WINNT=0x0501;WINVER=0x0501")
+set_target_properties(mpVolCtrl PROPERTIES COMPILE_DEFINITIONS "UNICODE;_UNICODE;NTDDI_VERSION=0x06010000;_WIN32_WINNT=0x0601;WINVER=0x0601")
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 set_target_properties(mpVolCtrl PROPERTIES OUTPUT_NAME "mpVolCtrl64")
 endif()

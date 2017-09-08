@@ -36,7 +36,7 @@ public:
 
 	int get_config_path()
 	{
-		std::basic_string<TCHAR> tmp(MAX_PATH, _T('\0'));
+		std::basic_string<TCHAR> tmp(MAX_PATH + 1, _T('\0'));
 		while (!SUCCEEDED(SHGetSpecialFolderPath(NULL, &tmp[0], CSIDL_APPDATA, TRUE)) && !SUCCEEDED(SHGetSpecialFolderPath(NULL, &tmp[0], CSIDL_LOCAL_APPDATA, TRUE)) && !SUCCEEDED(SHGetSpecialFolderPath(NULL, &tmp[0], CSIDL_MYDOCUMENTS, TRUE)))
 		{
 			int o = MessageBox(NULL, _T("Couldn't determine config folder"), _T("SHGetSpecialFolderPath error"), MB_ABORTRETRYIGNORE | MB_DEFBUTTON2);

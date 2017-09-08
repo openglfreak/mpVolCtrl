@@ -15,6 +15,7 @@
 #include "errors.hpp"
 #include "volume_control.hpp"
 #include "mpvc_config.hpp"
+#include "autorun_task.hpp"
 
 #define APPWM_VOLUMEUP (WM_APP+1)
 #define APPWM_VOLUMEDOWN (WM_APP+2)
@@ -90,14 +91,14 @@ AutoCleanup<void(*)()>* notifyIconDeleter;
 void addNotifyIcon()
 {
 	mpvc_config.invisible = false;
-	*notifyIconDeleter = false;
+	*notifyIconDeleter = true;
 	Shell_NotifyIcon(NIM_ADD, &notifyIconData);
 }
 
 void deleteNotifyIcon()
 {
 	Shell_NotifyIcon(NIM_DELETE, &notifyIconData);
-	*notifyIconDeleter = true;
+	*notifyIconDeleter = false;
 	mpvc_config.invisible = true;
 }
 
@@ -144,10 +145,22 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_RBUTTONUP:
 			POINT cursorPos;
 			GetCursorPos(&cursorPos);
-			SetForegroundWindow(hWnd);
+
 			CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_TOGGLE, MF_BYCOMMAND | (!mpvc_config.disabled ? MF_CHECKED : MF_UNCHECKED));
 			CheckMenuRadioItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_VISIBLE, IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_REMEMBER, mpvc_config.startHidden & 2 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_REMEMBER : (mpvc_config.startHidden & 1 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_HIDDEN : IDM_TRAY_POPUPMENU_SETTINGS_STARTHIDDEN_VISIBLE), MF_BYCOMMAND);
 			CheckMenuRadioItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_ENABLED, IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER, mpvc_config.startDisabled & 2 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER : (mpvc_config.startDisabled & 1 ? IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_DISABLED : IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_ENABLED), MF_BYCOMMAND);
+			if (!(GetMenuState(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN, MF_BYCOMMAND) & (MF_DISABLED | MF_GRAYED)))
+			{
+				bool b;
+				if (!get_autorun_state(b))
+				{
+					CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN, MF_BYCOMMAND | MF_CHECKED);
+					EnableMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN, MF_BYCOMMAND | MF_DISABLED);
+				}
+				CheckMenuItem(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN, MF_BYCOMMAND | (b ? MF_CHECKED : MF_UNCHECKED));
+			}
+
+			SetForegroundWindow(hWnd);
 			TrackPopupMenu(GetSubMenu(hMenu, 0), TPM_RIGHTBUTTON | TPM_HORPOSANIMATION | TPM_VERPOSANIMATION, cursorPos.x, cursorPos.y, 0, hWnd, NULL);
 			return 0;
 		}
@@ -180,6 +193,9 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDM_TRAY_POPUPMENU_SETTINGS_STARTDISABLED_REMEMBER:
 			if ((mpvc_config.startDisabled & 2) == 0)
 				mpvc_config.startDisabled = 2;
+			return 0;
+		case IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN:
+			set_autorun_state(!(GetMenuState(hMenu, IDM_TRAY_POPUPMENU_SETTINGS_AUTORUN, MF_BYCOMMAND) & MF_CHECKED));
 			return 0;
 		case IDM_TRAY_POPUPMENU_EXIT:
 			PostQuitMessage(0);

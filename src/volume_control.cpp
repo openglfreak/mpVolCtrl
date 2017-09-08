@@ -42,7 +42,7 @@ private:
 	template<typename UnaryFunction>
 	bool apply_to_all(UnaryFunction f)
 	{
-		static TCHAR processPath[MAX_PATH];
+		static TCHAR processPath[MAX_PATH + 1];
 		HRESULT hResult;
 
 		if (!iMMDevEnum)
@@ -119,7 +119,7 @@ private:
 				HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processId);
 				if (!hProcess)
 					continue;
-				DWORD len = GetProcessImageFileName(hProcess, processPath, MAX_PATH);
+				DWORD len = GetProcessImageFileName(hProcess, processPath, MAX_PATH + 1);
 				CloseHandle(hProcess);
 				if (len == 0)
 					continue;
